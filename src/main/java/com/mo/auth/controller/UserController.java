@@ -8,14 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
-public class TestController {
-    @GetMapping("/hello")
-    public ResponseEntity<String> sayHello() {
-        return ResponseEntity.ok("Hello! If you see this, your JWT is valid and working.");
-    }
+@RequestMapping("/api/v1/users")
+public class UserController {
 
-    @GetMapping("/profile")
+    @GetMapping("/me")
     public ResponseEntity<String> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
         // userDetails contains the username extracted from the verified JWT
         String username = userDetails.getUsername();
