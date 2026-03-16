@@ -1,0 +1,29 @@
+services:
+  postgres_db: # This name must match the hostname in your connection string
+    image: postgres:16-alpine
+    container_name: postgres_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=authdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+
+  spring_app:
+    build: .
+    container_name: spring_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres_db
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      # Overriding properties via env vars is a best practice:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_db:5432/authdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+
+volumes:
+  auth_postgres_data:

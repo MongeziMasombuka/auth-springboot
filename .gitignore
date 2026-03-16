@@ -31,3 +31,31 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Java / Maven
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+
+# Environment / Secrets
+.env
+.env.local
+docker-data/
+
+# IDEs
+.idea/
+.settings/
+.nb-gradle/
+
+# OS / Docker
+.DS_Store
+Thumbs.db
+.docker/
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
