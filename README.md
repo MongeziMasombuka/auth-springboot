@@ -1,41 +1,136 @@
-# 🔐 Spring Boot JWT Authentication API
+# 🔐 JWT Auth System
 
-A **production-style authentication REST API** built with **Spring Boot, Spring Security, and JWT** that demonstrates secure authentication, clean architecture, and proper testing practices.
+A stateless **JWT-based authentication REST API** built with Spring Boot. Handles user registration, login, and secure access to protected resources.
 
-This project implements **stateless authentication** using JSON Web Tokens and follows **industry backend design patterns** used in modern backend systems.
-
----
-
-# 📌 Project Overview
-
-This application provides:
-
-* User registration
-* Secure login with JWT
-* Protected API endpoints
-* Password encryption
-* Token validation
-* Global exception handling
-* Unit testing
-
-It demonstrates **secure API development practices** commonly used in backend systems.
+![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.3-brightgreen?style=flat-square&logo=springboot)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql)
+![JWT](https://img.shields.io/badge/JWT-JJWT%200.13.0-purple?style=flat-square)
 
 ---
 
-# 🚀 Key Features
+## Features
 
-* Stateless authentication using JWT
-* Secure password hashing using BCrypt
-* Input validation using Jakarta Validation
-* Global exception handling
-* Layered architecture (Controller → Service → Repository)
-* Spring Security configuration with filters
-* Unit tests using JUnit and Mockito
-* Swagger/OpenAPI documentation
+- **Register & Login** — username/password authentication with BCrypt hashing
+- **Stateless JWT** — signed HS256 tokens, 1-hour expiry, no server-side sessions
+- **Spring Security** — filter chain with per-request token validation
+- **Global Error Handling** — consistent `{ status, message, timestamp }` error responses
+- **Swagger UI** — interactive API docs at `/swagger-ui.html`
+- **Docker Compose** — one-command local setup with PostgreSQL
 
 ---
 
-# 🏗️ System Architecture
+## Quick Start
+
+### 1. Clone & configure
+
+```bash
+git clone <repo-url>
+cd auth
+```
+
+> ⚠️ **`JWT_SECRET` is required.** Use a random string of at least 32 characters.
+
+**Option A — `.env` file (recommended)**
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` and fill in your values:
+
+```env
+# JWT secret key (generate a strong secret, e.g., using openssl rand -base64 32)
+JWT_SECRET=your-super-secret-jwt-key-change-this
+
+# PostgreSQL database URL
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/your_database
+
+# Optional: database credentials (add if needed)
+# SPRING_DATASOURCE_USERNAME=your_username
+# SPRING_DATASOURCE_PASSWORD=your_password
+```
+
+**Option B — export directly**
+
+```bash
+export JWT_SECRET=your-super-secret-key-minimum-32-characters
+```
+
+### 2. Run with Docker Compose
+
+```bash
+./mvnw clean package -DskipTests
+docker-compose up --build
+```
+
+### 3. Run locally (Maven + external Postgres)
+
+```bash
+./mvnw spring-boot:run
+```
+
+The app starts on **http://localhost:8080**.  
+Swagger UI: **http://localhost:8080/swagger-ui.html**
+
+---
+
+## API Reference
+
+Base URL: `/api/v1`
+
+### `POST /auth/register`
+
+Create a new account.
+
+```json
+{
+  "username": "alice",
+  "password": "secret123"
+}
+```
+
+| Response | Body |
+|----------|------|
+| `201 Created` | `"User registered successfully"` |
+| `400 Bad Request` | `{ status, message, timestamp }` |
+
+---
+
+### `POST /auth/login`
+
+Authenticate and receive a JWT.
+
+```json
+{
+  "username": "alice",
+  "password": "secret123"
+}
+```
+
+| Response | Body |
+|----------|------|
+| `200 OK` | `{ "token": "eyJhbGci..." }` |
+| `401 Unauthorized` | `{ status, message, timestamp }` |
+
+---
+
+### `GET /users/me` 🔒
+
+Returns the authenticated user's profile. Requires a Bearer token.
+
+```
+Authorization: Bearer <token>
+```
+
+| Response | Body |
+|----------|------|
+| `200 OK` | `"Welcome to your profile, alice!"` |
+| `401 Unauthorized` | No/expired/invalid token |
+
+---
+
+## 🏗️ System Architecture
 
 The application follows a **clean layered architecture**.
 
@@ -65,44 +160,7 @@ Controller
 
 ---
 
-# 📂 Project Structure
-
-```
-src/main/java/com/mo/auth
-
-config
- └── SecurityConfig.java
-
-controller
- ├── AuthController.java
- └── UserController.java
-
-dto
- ├── AuthRequest.java
- ├── AuthResponse.java
- └── ErrorResponse.java
-
-exception
- └── GlobalExceptionHandler.java
-
-model
- └── User.java
-
-repository
- └── UserRepository.java
-
-security
- ├── JwtAuthenticationFilter.java
- └── JwtUtil.java
-
-service
- ├── AuthService.java
- └── UserDetailsServiceImpl.java
-```
-
----
-
-# 🔐 Authentication Flow
+## 🔐 Authentication Flow
 
 ### 1️⃣ User Registers
 
@@ -120,9 +178,7 @@ The password is encrypted using **BCrypt** before being stored in the database.
 POST /api/v1/auth/login
 ```
 
-Spring Security authenticates the credentials.
-
-If valid:
+Spring Security authenticates the credentials. If valid:
 
 1. UserDetails are loaded
 2. JWT token is generated
@@ -155,229 +211,68 @@ The **JWT Authentication Filter**:
 
 ---
 
-# 📡 API Endpoints
+## Environment Variables
 
-## Register
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `JWT_SECRET` | ✅ Yes | — | HMAC signing key (min 32 chars) |
+| `SPRING_DATASOURCE_URL` | No | `jdbc:postgresql://localhost:5432/authdb` | Database URL |
+| `SPRING_DATASOURCE_USERNAME` | No | `postgres` | DB username |
+| `SPRING_DATASOURCE_PASSWORD` | No | `password` | DB password |
 
-```
-POST /api/v1/auth/register
-```
+---
 
-Request
-
-```json
-{
-  "username": "john",
-  "password": "password123"
-}
-```
-
-Response
+## Project Structure
 
 ```
-201 Created
-User registered successfully
+src/main/java/com/mo/auth/
+├── config/
+│   ├── SecurityConfig.java          Filter chain, session policy
+│   └── OpenApiConfig.java           Swagger UI + Bearer scheme
+├── controller/
+│   ├── AuthController.java          /register, /login
+│   └── UserController.java          /users/me (protected)
+├── dto/
+│   ├── AuthRequest.java             Validated request body
+│   ├── AuthResponse.java            JWT response wrapper
+│   └── ErrorResponse.java           Error payload
+├── exception/
+│   └── GlobalExceptionHandler.java  Centralised error handling
+├── model/
+│   └── User.java                    JPA entity (UUID PK)
+├── repository/
+│   └── UserRepository.java          findByUsername()
+├── security/
+│   ├── JwtUtil.java                 Token generation & validation
+│   └── JwtAuthenticationFilter.java Per-request Bearer interceptor
+└── service/
+    ├── AuthService.java             register() + login()
+    └── UserDetailsServiceImpl.java  Spring Security user lookup
 ```
 
 ---
 
-## Login
+## Running Tests
 
-```
-POST /api/v1/auth/login
-```
-
-Request
-
-```json
-{
-  "username": "john",
-  "password": "password123"
-}
+```bash
+./mvnw test
 ```
 
-Response
+Tests use an H2 in-memory database — no external services required.
 
-```json
-{
-  "token": "jwt-token"
-}
-```
+| Test Class | Coverage |
+|------------|----------|
+| `AuthControllerTest` | Register & login endpoint behaviour |
+| `AuthServiceTest` | Registration and login business logic |
+| `JwtUtilTest` | Token generation, validation, expiry |
+| `UserDetailsServiceImplTest` | User lookup success & not-found cases |
+| `GlobalExceptionHandlerTest` | HTTP status codes per exception type |
 
 ---
 
-## Get Current User (Protected)
+## Known Limitations
 
-```
-GET /api/v1/users/me
-```
-
-Header
-
-```
-Authorization: Bearer <jwt-token>
-```
-
-Response
-
-```
-Welcome to your profile, john!
-```
-
----
-
-# ⚠️ Error Handling
-
-All errors are handled using a **Global Exception Handler**.
-
-Example error response:
-
-```json
-{
-  "status": 401,
-  "message": "Invalid username or password",
-  "timestamp": "2026-03-15T10:30:22"
-}
-```
-
-Handled exceptions include:
-
-* Duplicate username
-* Invalid credentials
-* Expired JWT
-* Invalid token signature
-* Unexpected server errors
-
----
-
-# 🧪 Testing
-
-The project includes **unit tests for controllers and services**.
-
-Testing stack:
-
-* JUnit 5
-* Mockito
-* Spring Boot Test
-* MockMvc
-
-Tests follow the **AAA pattern**:
-
-```
-Arrange
-Act
-Assert
-```
-
-Example test naming:
-
-```
-login_validCredentials_returnsToken()
-register_existingUsername_throwsException()
-```
-
----
-
-# 🔑 Security Implementation
-
-Security is configured in `SecurityConfig`.
-
-Key settings:
-
-* CSRF disabled (stateless API)
-* JWT filter added to security chain
-* Authentication required for all endpoints
-
-Public endpoints:
-
-```
-/api/v1/auth/**
-/swagger-ui/**
-/v3/api-docs/**
-```
-
-All other endpoints require authentication.
-
----
-
-# 📄 Swagger API Documentation
-
-Swagger UI allows interactive testing of the API.
-
-Access it at:
-
-```
-http://localhost:8080/swagger-ui.html
-```
-
----
-
-# ⚙️ Configuration
-
-Example configuration in `application.properties`:
-
-```
-app.jwt.secret=your-super-secret-key
-app.jwt.expiration-ms=86400000
-```
-
-JWT secret should be **at least 256 bits long** for proper security.
-
----
-
-# ▶️ Running the Project
-
-### Clone repository
-
-```
-git clone https://github.com/yourusername/springboot-jwt-auth.git
-```
-
-### Navigate to project
-
-```
-cd springboot-jwt-auth
-```
-
-### Run application
-
-```
-mvn spring-boot:run
-```
-
-Application runs on:
-
-```
-http://localhost:8080
-```
-
----
-
-# 🛠️ Technologies Used
-
-* Java 17+
-* Spring Boot
-* Spring Security
-* Spring Data JPA
-* JWT (JJWT)
-* Maven
-* Lombok
-* Swagger / OpenAPI
-* JUnit 5
-* Mockito
-
----
-
-# 📈 Future Improvements
-
-Potential enhancements:
-
-* Role-based authorization (RBAC)
-* Refresh tokens
-* OAuth2 authentication
-* Docker containerization
-* Rate limiting
-* Email verification
-* Integration tests
-* CI/CD pipeline
-
+- No **refresh tokens** — clients must re-authenticate after expiry
+- No **roles / RBAC** — all authenticated users have equal access
+- No **token revocation** — tokens are valid until expiry (add a Redis blocklist to address this)
+- **DDL auto-update** is enabled — use Flyway or Liquibase for production migrations
